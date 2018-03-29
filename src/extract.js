@@ -8,8 +8,7 @@ function extract(code) {
   var tagStartLineNum = 0
   var finished = false
   var inScript = false
-  var indent
-  var indentRegex
+  var codeStartIndex
 
   var parser = new htmlparser.Parser({
 
@@ -29,6 +28,7 @@ function extract(code) {
       }
 
       inScript = true
+
       tagStartLineNum = code.slice(0, parser.endIndex).match(/\r\n|\n|\r/g).length + 1
     },
 
@@ -44,29 +44,21 @@ function extract(code) {
       if (!inScript) {
         return
       }
-
-      if (!indent) {
-        var spaces = /^[\n\r]*(\s*)/.exec(data)[1]
-        indentRegex = new RegExp('^(?:' + spaces + ')?(.*)', 'gm')
-        indent = spaces.length
+      
+      if (!codeStartIndex) {
+        codeStartIndex = parser.startIndex;
       }
 
-      // dedent code
-      scriptCode += data.replace(indentRegex, function(_, line) {
-        return line
-      })
+      scriptCode += data
     }
 
   })
 
   parser.parseComplete(code)
 
-  if (!indent) {
-    indent = 0
-  }
   // trim the last line's ending spaces
   scriptCode = scriptCode.replace(/[ \t]*$/, '')
-  return { code: scriptCode, line: tagStartLineNum, indent: indent }
+  return { code: scriptCode, line: tagStartLineNum, codeStartIndex: codeStartIndex }
 }
 
 module.exports = extract
